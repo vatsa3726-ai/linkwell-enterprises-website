@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch:
 
 permissions:
   contents: write
@@ -13,76 +12,20 @@ jobs:
   optimize-seo:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
+      - uses: actions/checkout@v4
       - name: Update SEO metadata
-        shell: bash
         run: |
-          python3 - <<'PY'
-          from pathlib import Path
-
-          path = Path('index.html')
-          html = path.read_text(encoding='utf-8')
-
-          html = html.replace(
-              '<title>Linkwell Enterprises | Industrial Crane Manufacturers in Bengaluru</title>',
-              '<title>Crane Manufacturer in Bangalore | EOT, HOT & Industrial Cranes | Linkwell Enterprises</title>'
-          )
-
-          old = 'content="Linkwell Enterprises, established in 2007 in Bengaluru, manufactures industrial cranes, goods lifts, heavy fabrication, industrial shed construction and customized structural solutions.">'
-          new = 'content="Linkwell Enterprises is a crane manufacturer in Bangalore, Karnataka, specializing in EOT, HOT, single girder, double girder, gantry and customized industrial cranes up to 100 tons, plus goods lifts and heavy fabrication.">'
-          html = html.replace(old, new)
-
-          marker = '<!-- LINKWELL SEO -->'
-          if marker not in html:
-              seo = '''<!-- LINKWELL SEO -->
-<link rel="canonical" href="https://linkwellenterprises.com/">
-<meta name="robots" content="index, follow">
-<meta property="og:type" content="website">
-<meta property="og:title" content="Crane Manufacturer in Bangalore | Linkwell Enterprises">
-<meta property="og:description" content="Crane manufacturer in Bangalore specializing in EOT, HOT, single girder, double girder, gantry and customized industrial cranes up to 100 tons.">
-<meta property="og:url" content="https://linkwellenterprises.com/">
-<meta property="og:site_name" content="Linkwell Enterprises">
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "LocalBusiness",
-  "@id": "https://linkwellenterprises.com/#business",
-  "name": "Linkwell Enterprises",
-  "url": "https://linkwellenterprises.com/",
-  "logo": "https://linkwellenterprises.com/images/logo.png",
-  "telephone": "+91 9900138474",
-  "foundingDate": "2007",
-  "description": "Crane manufacturer in Bangalore specializing in EOT, HOT, single girder, double girder, gantry and customized industrial cranes up to 100 tons, plus goods lifts, industrial shed construction, heavy fabrication and customized structural work.",
-  "address": {
-    "@type": "PostalAddress",
-    "streetAddress": "#200, Mahadeshwara Layout, Vishwanidam Post, Opp. Herohalli Lake, Herohalli",
-    "addressLocality": "Bengaluru",
-    "addressRegion": "Karnataka",
-    "postalCode": "560091",
-    "addressCountry": "IN"
-  },
-  "areaServed": "India",
-  "sameAs": ["https://www.google.com/maps/search/?api=1&query=Linkwell%20Enterprises%2C%20Bengaluru&query_place_id=ChIJPTCKfGk8rjsR1Fw5xU12wog"]
-}
-</script>
-'''
-              html = html.replace('<style>', seo + '\n<style>', 1)
-
-          path.write_text(html, encoding='utf-8')
-          print('SEO metadata updated')
-          PY
-
-      - name: Commit SEO changes
-        shell: bash
+          sed -i 's#<title>Linkwell Enterprises | Industrial Crane Manufacturers in Bengaluru</title>#<title>Crane Manufacturer in Bangalore | EOT, HOT \& Industrial Cranes | Linkwell Enterprises</title>#' index.html
+          sed -i 's#content="Linkwell Enterprises, established in 2007 in Bengaluru, manufactures industrial cranes, goods lifts, heavy fabrication, industrial shed construction and customized structural solutions\."#content="Linkwell Enterprises is a crane manufacturer in Bangalore, Karnataka, specializing in EOT, HOT, single girder, double girder, gantry and customized industrial cranes up to 100 tons, plus goods lifts and heavy fabrication."#' index.html
+          if ! grep -q 'id="linkwell-seo"' index.html; then
+            sed -i '/<style>/i <link rel="canonical" href="https://linkwellenterprises.com/">\n<meta name="robots" content="index, follow">\n<meta property="og:type" content="website">\n<meta property="og:title" content="Crane Manufacturer in Bangalore | Linkwell Enterprises">\n<meta property="og:description" content="Crane manufacturer in Bangalore specializing in EOT, HOT, single girder, double girder, gantry and customized industrial cranes up to 100 tons.">\n<meta property="og:url" content="https://linkwellenterprises.com/">\n<meta property="og:site_name" content="Linkwell Enterprises">\n<script type="application/ld+json" id="linkwell-seo">{"@context":"https://schema.org","@type":"LocalBusiness","@id":"https://linkwellenterprises.com/#business","name":"Linkwell Enterprises","url":"https://linkwellenterprises.com/","logo":"https://linkwellenterprises.com/images/logo.png","telephone":"+91 9900138474","foundingDate":"2007","description":"Crane manufacturer in Bangalore specializing in EOT, HOT, single girder, double girder, gantry and customized industrial cranes up to 100 tons, plus goods lifts, industrial shed construction, heavy fabrication and customized structural work.","address":{"@type":"PostalAddress","streetAddress":"#200, Mahadeshwara Layout, Vishwanidam Post, Opp. Herohalli Lake, Herohalli","addressLocality":"Bengaluru","addressRegion":"Karnataka","postalCode":"560091","addressCountry":"IN"},"areaServed":"India"}</script>' index.html
+          fi
+      - name: Commit changes
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add index.html
-          if git diff --cached --quiet; then
-            echo 'No SEO changes to commit.'
-          else
+          if ! git diff --cached --quiet; then
             git commit -m 'Improve SEO metadata and local business structured data'
             git push
           fi
