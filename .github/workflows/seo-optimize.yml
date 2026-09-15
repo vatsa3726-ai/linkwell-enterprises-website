@@ -20,12 +20,116 @@ jobs:
           if ! grep -q 'id="linkwell-seo"' index.html; then
             sed -i '/<style>/i <link rel="canonical" href="https://linkwellenterprises.com/">\n<meta name="robots" content="index, follow">\n<meta property="og:type" content="website">\n<meta property="og:title" content="Crane Manufacturer in Bangalore | Linkwell Enterprises">\n<meta property="og:description" content="Crane manufacturer in Bangalore specializing in EOT, HOT, single girder, double girder, gantry and customized industrial cranes up to 100 tons.">\n<meta property="og:url" content="https://linkwellenterprises.com/">\n<meta property="og:site_name" content="Linkwell Enterprises">\n<script type="application/ld+json" id="linkwell-seo">{"@context":"https://schema.org","@type":"LocalBusiness","@id":"https://linkwellenterprises.com/#business","name":"Linkwell Enterprises","url":"https://linkwellenterprises.com/","logo":"https://linkwellenterprises.com/images/logo.png","telephone":"+91 9900138474","foundingDate":"2007","description":"Crane manufacturer in Bangalore specializing in EOT, HOT, single girder, double girder, gantry and customized industrial cranes up to 100 tons, plus goods lifts, industrial shed construction, heavy fabrication and customized structural work.","address":{"@type":"PostalAddress","streetAddress":"#200, Mahadeshwara Layout, Vishwanidam Post, Opp. Herohalli Lake, Herohalli","addressLocality":"Bengaluru","addressRegion":"Karnataka","postalCode":"560091","addressCountry":"IN"},"areaServed":"India"}</script>' index.html
           fi
+
+      - name: Add industrial gallery
+        shell: python
+        run: |
+          from pathlib import Path
+
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+
+          if 'id="industrial-gallery"' in s:
+              print('Industrial gallery already exists; nothing to do.')
+          else:
+              css = r'''
+
+/* =====================================================
+   INDUSTRIAL GALLERY
+===================================================== */
+
+.gallery-section{
+    background:#0b1117;
+    color:#ffffff;
+}
+
+.gallery-heading small{
+    color:#f5b400;
+    font-weight:800;
+    letter-spacing:2px;
+    text-transform:uppercase;
+}
+
+.gallery-heading h2{ color:#ffffff; }
+.gallery-heading p{ color:#b9c0c6; }
+
+.gallery-grid{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:18px;
+}
+
+.gallery-card{
+    background:#111820;
+    border:1px solid rgba(255,255,255,.10);
+    overflow:hidden;
+    transition:.25s;
+}
+
+.gallery-card:hover{
+    transform:translateY(-5px);
+    box-shadow:0 14px 30px rgba(0,0,0,.30);
+}
+
+.gallery-card img{
+    width:100%;
+    height:230px;
+    display:block;
+    object-fit:cover;
+}
+
+@media(max-width:1100px){
+    .gallery-grid{grid-template-columns:repeat(2,1fr);}
+}
+
+@media(max-width:600px){
+    .gallery-grid{grid-template-columns:1fr;}
+    .gallery-card img{height:250px;}
+}
+'''
+
+              gallery = r'''
+
+<!-- =====================================================
+     INDUSTRIAL GALLERY
+===================================================== -->
+
+<section class="gallery-section" id="industrial-gallery">
+    <div class="heading gallery-heading">
+        <small>Industrial Gallery</small>
+        <h2>Inside our industrial environment.</h2>
+        <p>A look at industrial work, fabrication and lifting environments.</p>
+    </div>
+
+    <div class="gallery-grid">
+        <div class="gallery-card"><img src="WhatsApp%20Image%202026-09-15%20at%206.46.10%20PM.jpeg" alt="Linkwell Enterprises industrial work" loading="lazy"></div>
+        <div class="gallery-card"><img src="WhatsApp%20Image%202026-09-15%20at%206.46.11%20PM.jpeg" alt="Linkwell Enterprises industrial fabrication" loading="lazy"></div>
+        <div class="gallery-card"><img src="WhatsApp%20Image%202026-09-15%20at%206.46.11%20PM%20%281%29.jpeg" alt="Linkwell Enterprises industrial facility" loading="lazy"></div>
+        <div class="gallery-card"><img src="WhatsApp%20Image%202026-09-15%20at%206.46.12%20PM.jpeg" alt="Linkwell Enterprises crane manufacturing environment" loading="lazy"></div>
+        <div class="gallery-card"><img src="WhatsApp%20Image%202026-09-15%20at%206.46.12%20PM%20%281%29.jpeg" alt="Linkwell Enterprises engineering work" loading="lazy"></div>
+        <div class="gallery-card"><img src="WhatsApp%20Image%202026-09-15%20at%206.46.12%20PM%20%282%29.jpeg" alt="Linkwell Enterprises industrial project" loading="lazy"></div>
+        <div class="gallery-card"><img src="WhatsApp%20Image%202026-09-15%20at%206.46.13%20PM.jpeg" alt="Linkwell Enterprises heavy fabrication" loading="lazy"></div>
+    </div>
+</section>
+'''
+
+              if '</style>' not in s:
+                  raise SystemExit('Could not find closing style tag.')
+              s = s.replace('</style>', css + '\n</style>', 1)
+
+              marker = '<!-- =====================================================\n     CTA\n===================================================== -->'
+              if marker not in s:
+                  raise SystemExit('Could not find CTA marker.')
+              s = s.replace(marker, gallery + '\n\n' + marker, 1)
+              p.write_text(s, encoding='utf-8')
+              print('Industrial gallery added.')
+
       - name: Commit changes
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add index.html
           if ! git diff --cached --quiet; then
-            git commit -m 'Improve SEO metadata and local business structured data'
+            git commit -m 'Improve SEO and add industrial gallery'
             git push
           fi
