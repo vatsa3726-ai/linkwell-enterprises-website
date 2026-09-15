@@ -2,7 +2,9 @@ name: SEO Optimization
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -14,28 +16,27 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Add SEO metadata and LocalBusiness structured data
+      - name: Update SEO metadata
+        shell: bash
         run: |
-          python3 <<'PY'
+          python3 - <<'PY'
           from pathlib import Path
 
-          path = Path("index.html")
-          html = path.read_text(encoding="utf-8")
-
-          if "id=\"linkwell-seo\"" in html:
-              print("SEO metadata already present; nothing to do.")
-              raise SystemExit(0)
+          path = Path('index.html')
+          html = path.read_text(encoding='utf-8')
 
           html = html.replace(
-              "<title>Linkwell Enterprises | Industrial Crane Manufacturers in Bengaluru</title>",
-              "<title>Crane Manufacturer in Bangalore | EOT, HOT & Industrial Cranes | Linkwell Enterprises</title>"
+              '<title>Linkwell Enterprises | Industrial Crane Manufacturers in Bengaluru</title>',
+              '<title>Crane Manufacturer in Bangalore | EOT, HOT & Industrial Cranes | Linkwell Enterprises</title>'
           )
 
-          old_description = 'content="Linkwell Enterprises, established in 2007 in Bengaluru, manufactures industrial cranes, goods lifts, heavy fabrication, industrial shed construction and customized structural solutions.">' 
-          new_description = 'content="Linkwell Enterprises is a crane manufacturer in Bangalore, Karnataka, specializing in EOT, HOT, single girder, double girder, gantry and customized industrial cranes up to 100 tons, plus goods lifts and heavy fabrication.">' 
-          html = html.replace(old_description, new_description)
+          old = 'content="Linkwell Enterprises, established in 2007 in Bengaluru, manufactures industrial cranes, goods lifts, heavy fabrication, industrial shed construction and customized structural solutions.">'
+          new = 'content="Linkwell Enterprises is a crane manufacturer in Bangalore, Karnataka, specializing in EOT, HOT, single girder, double girder, gantry and customized industrial cranes up to 100 tons, plus goods lifts and heavy fabrication.">'
+          html = html.replace(old, new)
 
-          seo_block = r'''\n<!-- id="linkwell-seo" -->
+          marker = '<!-- LINKWELL SEO -->'
+          if marker not in html:
+              seo = '''<!-- LINKWELL SEO -->
 <link rel="canonical" href="https://linkwellenterprises.com/">
 <meta name="robots" content="index, follow">
 <meta property="og:type" content="website">
@@ -46,8 +47,8 @@ jobs:
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": ["LocalBusiness", "Organization"],
-  "@id": "https://linkwellenterprises.com/#organization",
+  "@type": "LocalBusiness",
+  "@id": "https://linkwellenterprises.com/#business",
   "name": "Linkwell Enterprises",
   "url": "https://linkwellenterprises.com/",
   "logo": "https://linkwellenterprises.com/images/logo.png",
@@ -67,20 +68,21 @@ jobs:
 }
 </script>
 '''
+              html = html.replace('<style>', seo + '\n<style>', 1)
 
-          html = html.replace("<style>", seo_block + "\n<style>", 1)
-          path.write_text(html, encoding="utf-8")
-          print("SEO metadata and LocalBusiness structured data added.")
+          path.write_text(html, encoding='utf-8')
+          print('SEO metadata updated')
           PY
 
       - name: Commit SEO changes
+        shell: bash
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add index.html
           if git diff --cached --quiet; then
-            echo "No SEO changes to commit."
+            echo 'No SEO changes to commit.'
           else
-            git commit -m "Improve SEO metadata and local business structured data"
+            git commit -m 'Improve SEO metadata and local business structured data'
             git push
           fi
